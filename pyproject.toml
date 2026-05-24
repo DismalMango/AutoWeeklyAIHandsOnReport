@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auto-weekly-ai-feedback"
+version = "0.1.0"
+description = "CLI agent that discovers one recent AI-native product online and writes a Chinese public-research usage report."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain>=1.0.0",
+    "langchain-openai>=1.0.0",
+    "langchain-tavily>=0.2.0",
+    "langgraph>=1.0.0",
+    "pydantic>=2.8.0",
+    "python-dotenv>=1.0.1",
+    "typer>=0.12.5",
+    "rich>=13.7.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+]
+
+[project.scripts]
+ai-product-report = "auto_weekly_ai_feedback.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
