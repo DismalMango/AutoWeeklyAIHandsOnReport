@@ -64,7 +64,7 @@ def run(
             default=recommended_slug,
         )
         final_state = run_workflow(
-            initial_state=initial_state,
+            initial_state=preselection_state,
             settings=settings,
             user_selected_slug=chosen_slug,
         )

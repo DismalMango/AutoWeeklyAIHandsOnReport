@@ -30,6 +30,15 @@ def _wrap_node(node_fn: NodeFn) -> NodeFn:
     return wrapped
 
 
+def _has_preselected_state(state: GraphState) -> bool:
+    selection = state.get("selection", {})
+    return bool(
+        state.get("candidates")
+        and selection.get("options")
+        and selection.get("recommended_slug")
+    )
+
+
 def build_workflow(
     *,
     search_candidates_fn: NodeFn,
@@ -100,11 +109,11 @@ def run_workflow(
     user_selected_slug: str | None = None,
 ) -> GraphState:
     effective_state = dict(initial_state)
+    selection = {**effective_state.get("selection", {})}
     if user_selected_slug:
-        effective_state["selection"] = {
-            **effective_state.get("selection", {}),
-            "user_selected_slug": user_selected_slug,
-        }
+        selection["user_selected_slug"] = user_selected_slug
+    if selection:
+        effective_state["selection"] = selection
 
     search_node, select_node, write_node = _resolve_nodes(
         settings=settings,
@@ -112,6 +121,10 @@ def run_workflow(
         select_product_fn=select_product_fn,
         write_editorial_review_fn=write_editorial_review_fn,
     )
+    if _has_preselected_state(effective_state):
+        resolved_state = _merge_state(effective_state, resolve_selection(effective_state))
+        return _merge_state(resolved_state, write_node(resolved_state))
+
     workflow = build_workflow(
         search_candidates_fn=search_node,
         select_product_fn=select_node,

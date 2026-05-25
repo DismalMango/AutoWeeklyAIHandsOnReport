@@ -92,6 +92,31 @@ def test_run_workflow_uses_user_selected_slug_in_user_mode() -> None:
     assert final_state["report_markdown"].startswith("# product-b")
 
 
+def test_run_workflow_reuses_preselected_state_in_user_mode() -> None:
+    initial_state: GraphState = {
+        "today": "2026-05-25",
+        "days": 30,
+        "topic": "general",
+        "max_candidates": 4,
+        "candidates": [make_candidate("product-a"), make_candidate("product-b")],
+        "selection": make_selection_state()["selection"],
+    }
+
+    final_state = run_workflow(
+        initial_state=initial_state,
+        search_candidates_fn=lambda state: pytest.fail("search_candidates should not rerun"),
+        select_product_fn=lambda state: pytest.fail("select_product should not rerun"),
+        write_editorial_review_fn=lambda state: {
+            "report_markdown": f"# {state['selection']['final_slug']}\n\nBody"
+        },
+        user_selected_slug="product-b",
+    )
+
+    assert final_state["selection"]["final_slug"] == "product-b"
+    assert final_state["selection"]["decision_mode"] == "user"
+    assert final_state["report_markdown"].startswith("# product-b")
+
+
 def test_run_until_selection_returns_options_without_report() -> None:
     initial_state: GraphState = {
         "today": "2026-05-25",
@@ -158,6 +183,7 @@ def test_cli_run_prompts_for_slug_in_user_mode(monkeypatch: pytest.MonkeyPatch, 
         **_: object,
     ) -> GraphState:
         captured["selected_slug"] = user_selected_slug or ""
+        captured["recommended_slug"] = initial_state["selection"]["recommended_slug"]
         return {
             **initial_state,
             "selection": {
@@ -196,7 +222,11 @@ def test_cli_run_prompts_for_slug_in_user_mode(monkeypatch: pytest.MonkeyPatch, 
     )
 
     assert result.exit_code == 0
-    assert captured == {"topic": "agents", "selected_slug": "product-b"}
+    assert captured == {
+        "topic": "agents",
+        "selected_slug": "product-b",
+        "recommended_slug": "product-a",
+    }
     assert "product-a" in result.stdout
     assert "product-b" in result.stdout
 
